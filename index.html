@@ -121,38 +121,76 @@
         border-radius: 20px;
         letter-spacing: 0.02em;
       }
+
+      .stack {
+        width: 100%;
+        max-width: 480px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .length-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #888;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+      }
     </style>
   </head>
   <body>
-    <div class="card">
-      <div class="input-row">
-        <input
-          type="number"
-          id="val"
-          placeholder="0"
-          min="0"
-          step="any"
-          oninput="convert()"
-          inputmode="decimal"
-        />
-        <select id="unit" onchange="convert()">
-          <option value="CFM">CFM</option>
-          <option value="CFS">CFS</option>
-          <option value="CMH" selected>CMH</option>
-          <option value="CMS">CMS</option>
-          <option value="CMM">CMM</option>
-          <option value="LPM">LPM</option>
-          <option value="LPS">LPS</option>
-          <option value="GPM">GPM</option>
-        </select>
+    <div class="stack">
+      <div class="card">
+        <div class="input-row">
+          <input
+            type="number"
+            id="val"
+            placeholder="0"
+            min="0"
+            step="any"
+            oninput="convert()"
+            inputmode="decimal"
+          />
+          <select id="unit" onchange="convert()">
+            <option value="CFM">CFM</option>
+            <option value="CFS">CFS</option>
+            <option value="CMH" selected>CMH</option>
+            <option value="CMS">CMS</option>
+            <option value="CMM">CMM</option>
+            <option value="LPM">LPM</option>
+            <option value="LPS">LPS</option>
+            <option value="GPM">GPM</option>
+          </select>
+        </div>
+
+        <div class="result-box" id="resultBox" style="display: none">
+          <div class="result-label">最接近型號</div>
+          <div class="result-value" id="result">
+            —<span class="result-unit">CFM</span>
+          </div>
+          <div class="result-hint" id="hint" style="display: none"></div>
+        </div>
       </div>
 
-      <div class="result-box">
-        <div class="result-label">結果</div>
-        <div class="result-value" id="result">
-          —<span class="result-unit">型</span>
+      <div class="card length-card">
+        <div class="length-label">長度 (mm)</div>
+        <div class="input-row">
+          <input
+            type="number"
+            id="lenVal"
+            placeholder="0"
+            min="0"
+            step="1"
+            oninput="matchModel()"
+            inputmode="decimal"
+          />
         </div>
-        <div class="result-hint" id="hint" style="display: none"></div>
+        <div class="result-box" id="modelResult" style="display: none">
+          <div class="result-label">最接近型號</div>
+          <div class="result-value" id="modelName">—</div>
+          <div class="result-hint" id="modelHint"></div>
+        </div>
       </div>
     </div>
 
@@ -182,21 +220,56 @@
         return null;
       }
 
+      const MODEL_TABLE = [
+        { model: 300, mm: 882 },
+        { model: 400, mm: 1010 },
+        { model: 600, mm: 1213 },
+        { model: 800, mm: 1416 },
+        { model: 1000, mm: 1619 },
+        { model: 1200, mm: 1905 },
+        { model: 1400, mm: 2025 },
+      ];
+
+      function matchModel() {
+        const raw = document.getElementById("lenVal").value;
+        const resultBox = document.getElementById("modelResult");
+        const modelName = document.getElementById("modelName");
+        const modelHint = document.getElementById("modelHint");
+        const num = parseFloat(raw);
+
+        if (raw === "" || isNaN(num)) {
+          resultBox.style.display = "none";
+          return;
+        }
+
+        let best = MODEL_TABLE[0];
+        for (const row of MODEL_TABLE) {
+          if (Math.abs(row.mm - num) < Math.abs(best.mm - num)) best = row;
+        }
+
+        resultBox.style.display = "block";
+        modelName.innerHTML = `${best.mm}<span class="result-unit">mm</span>`;
+        modelHint.textContent = `${best.model} 型`;
+        modelHint.style.display = "inline-block";
+      }
+
       function convert() {
         const raw = document.getElementById("val").value;
         const unit = document.getElementById("unit").value;
         const el = document.getElementById("result");
         const hint = document.getElementById("hint");
+        const resultBox = document.getElementById("resultBox");
         const num = parseFloat(raw);
 
         if (raw === "" || isNaN(num)) {
-          el.innerHTML = `—<span class="result-unit">型</span>`;
+          resultBox.style.display = "none";
           hint.style.display = "none";
           return;
         }
 
         const cfm = num * UNITS[unit];
-        el.innerHTML = `${fmt(cfm)}<span class="result-unit">型</span>`;
+        resultBox.style.display = "block";
+        el.innerHTML = `${fmt(cfm)}<span class="result-unit">CFM</span>`;
 
         const match = nearestStandard(cfm);
         if (match) {
