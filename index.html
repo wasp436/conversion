@@ -58,29 +58,32 @@
         opacity: 0.3;
       }
 
-      select {
-        padding: 16px 12px;
-        font-size: 1.1rem;
+      .unit-btns {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .unit-btn {
+        flex: 1;
+        min-width: 56px;
+        padding: 10px 0;
+        font-size: 0.95rem;
         font-weight: 700;
         border: 2px solid #e4e7ef;
-        border-radius: 12px;
-        outline: none;
+        border-radius: 10px;
         background: #fafafa;
         color: #1a1a2e;
         cursor: pointer;
-        transition: border-color 0.15s;
-        flex-shrink: 0;
-        width: auto;
-        -webkit-appearance: none;
-        appearance: none;
-        padding-right: 32px;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23aaa' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 10px center;
+        transition:
+          border-color 0.15s,
+          background 0.15s,
+          color 0.15s;
       }
-      select:focus {
+      .unit-btn.active {
         border-color: #4361ee;
-        background-color: #fff;
+        background: #4361ee;
+        color: #fff;
       }
 
       .result-box {
@@ -152,16 +155,13 @@
             oninput="convert()"
             inputmode="decimal"
           />
-          <select id="unit" onchange="convert()">
-            <option value="CFM">CFM</option>
-            <option value="CFS">CFS</option>
-            <option value="CMH" selected>CMH</option>
-            <option value="CMS">CMS</option>
-            <option value="CMM">CMM</option>
-            <option value="LPM">LPM</option>
-            <option value="LPS">LPS</option>
-            <option value="GPM">GPM</option>
-          </select>
+        </div>
+        <div class="unit-btns">
+          <button class="unit-btn" onclick="setUnit('CFM')">CFM</button>
+          <button class="unit-btn" onclick="setUnit('CFS')">CFS</button>
+          <button class="unit-btn active" onclick="setUnit('CMH')">CMH</button>
+          <button class="unit-btn" onclick="setUnit('CMS')">CMS</button>
+          <button class="unit-btn" onclick="setUnit('CMM')">CMM</button>
         </div>
 
         <div class="result-box" id="resultBox" style="display: none">
@@ -201,10 +201,17 @@
         CMH: 0.588578,
         CMS: 2118.88,
         CMM: 35.3147,
-        LPM: 0.0353147,
-        LPS: 2.11888,
-        GPM: 0.1336806,
       };
+
+      let currentUnit = "CMH";
+
+      function setUnit(u) {
+        currentUnit = u;
+        document.querySelectorAll(".unit-btn").forEach((b) => {
+          b.classList.toggle("active", b.textContent === u);
+        });
+        convert();
+      }
 
       function fmt(n) {
         if (!isFinite(n)) return "—";
@@ -255,7 +262,6 @@
 
       function convert() {
         const raw = document.getElementById("val").value;
-        const unit = document.getElementById("unit").value;
         const el = document.getElementById("result");
         const hint = document.getElementById("hint");
         const resultBox = document.getElementById("resultBox");
@@ -267,7 +273,7 @@
           return;
         }
 
-        const cfm = num * UNITS[unit];
+        const cfm = num * UNITS[currentUnit];
         resultBox.style.display = "block";
         el.innerHTML = `${fmt(cfm)}<span class="result-unit">CFM</span>`;
 
